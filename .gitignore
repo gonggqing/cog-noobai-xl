@@ -54,6 +54,9 @@ sdxl-lora-cache/
 .DS_Store
 Thumbs.db
 
+# Cog specific
+.cog/
+
 # Test outputs
 test_outputs/
 *.png

@@ -377,26 +377,26 @@ class Predictor(BasePredictor, MultiLoRAMixin):
             self.safety_checker = None
             self.feature_extractor = None
 
-        # Try to load noobai XL 1.1 as complete pipeline first
+        # Try to load noobai XL Vpred 1.0 as complete pipeline first
         try:
-            print("Loading noobai XL 1.1 complete model...")
-            
-            
+            print("Loading noobai XL Vpred 1.0 complete model...")
+
+
             from diffusers import StableDiffusionXLPipeline
-            
-            # Load noobai XL 1.1 as complete pipeline (has all components)
+
+            # Load noobai XL Vpred 1.0 as complete pipeline (has all components)
             self.txt2img_pipe = StableDiffusionXLPipeline.from_pretrained(
                 'Laxhar/noobai-XL-Vpred-1.0',
                 torch_dtype=torch.float16,
                 use_safetensors=True,
                 custom_pipeline="lpw_stable_diffusion_xl"
             ).to(self.device)
-            
-            self.current_model = "noobai-XL-1.1"
-            print("✅ noobai XL 1.1 complete model loaded successfully")
+
+            self.current_model = "noobai-XL-Vpred-1.0"
+            print("✅ noobai XL Vpred 1.0 complete model loaded successfully")
             
         except Exception as e:
-            print(f"⚠️  Failed to load noobai XL 1.1: {e}")
+            print(f"⚠️  Failed to load noobai XL Vpred 1.0: {e}")
             print("⚠️  Falling back to standard SDXL...")
             
             # Fallback: Load SDXL base pipeline
@@ -414,7 +414,7 @@ class Predictor(BasePredictor, MultiLoRAMixin):
             self.current_model = "sdxl-base"
             print("✅ SDXL fallback model loaded")
         
-        # Store original UNet for model switching (either noobai XL 1.1 or SDXL)
+        # Store original UNet for model switching (either noobai XL Vpred 1.0 or SDXL)
         self.original_unet = self.txt2img_pipe.unet
 
         print("Loading SDXL img2img pipeline...")
@@ -463,9 +463,9 @@ class Predictor(BasePredictor, MultiLoRAMixin):
         """Switch to standard SDXL for realistic content."""
         if self.current_model != "sdxl-base":
             print("Switching to standard SDXL...")
-            
-            # If current model is noobai XL 1.1, we need to load SDXL
-            if self.current_model == "noobai-xl-1.1":
+
+            # If current model is noobai XL Vpred 1.0, we need to load SDXL
+            if self.current_model == "noobai-XL-Vpred-1.0":
                 try:
                     # Load standard SDXL pipeline
                     self.txt2img_pipe = DiffusionPipeline.from_pretrained(
@@ -501,23 +501,23 @@ class Predictor(BasePredictor, MultiLoRAMixin):
                 except Exception as e:
                     print(f"⚠️  Failed to switch to SDXL: {e}")
             
-    def switch_to_noobai_xl_1_1(self):
-        """Switch back to noobai XL 1.1 (default)."""
-        if self.current_model != "noobai-xl-1.1":
-            print("Switching back to noobai XL 1.1...")
-            
+    def switch_to_noobai_xl_vpred(self):
+        """Switch back to noobai XL Vpred 1.0 (default)."""
+        if self.current_model != "noobai-XL-Vpred-1.0":
+            print("Switching back to noobai XL Vpred 1.0...")
+
             try:
                 from diffusers import StableDiffusionXLPipeline
 
-                # Load noobai XL 1.1 pipeline
+                # Load noobai XL Vpred 1.0 pipeline
                 self.txt2img_pipe = StableDiffusionXLPipeline.from_pretrained(
-                    'Laxhar/noobai-XL-1.1',
+                    'Laxhar/noobai-XL-Vpred-1.0',
                     torch_dtype=torch.float16,
                     use_safetensors=True,
                     custom_pipeline="lpw_stable_diffusion_xl"
                 ).to(self.device)
                 
-                # Update other pipelines to use noobai XL 1.1 components
+                # Update other pipelines to use noobai XL Vpred 1.0 components
                 self.img2img_pipe = StableDiffusionXLImg2ImgPipeline(
                     vae=self.txt2img_pipe.vae,
                     text_encoder=self.txt2img_pipe.text_encoder,
@@ -527,7 +527,7 @@ class Predictor(BasePredictor, MultiLoRAMixin):
                     unet=self.txt2img_pipe.unet,
                     scheduler=self.txt2img_pipe.scheduler,
                 ).to(self.device)
-                
+
                 self.inpaint_pipe = StableDiffusionXLInpaintPipeline(
                     vae=self.txt2img_pipe.vae,
                     text_encoder=self.txt2img_pipe.text_encoder,
@@ -537,12 +537,12 @@ class Predictor(BasePredictor, MultiLoRAMixin):
                     unet=self.txt2img_pipe.unet,
                     scheduler=self.txt2img_pipe.scheduler,
                 ).to(self.device)
-                
-                self.current_model = "noobai-xl-1.1"
-                print("✅ Switched to noobai XL 1.1")
-                
+
+                self.current_model = "noobai-XL-Vpred-1.0"
+                print("✅ Switched to noobai XL Vpred 1.0")
+
             except Exception as e:
-                print(f"⚠️  Failed to switch to noobai XL 1.1: {e}")
+                print(f"⚠️  Failed to switch to noobai XL Vpred 1.0: {e}")
 
     def run_safety_checker(self, image):
         if self.safety_checker is None or self.feature_extractor is None:
@@ -702,9 +702,9 @@ class Predictor(BasePredictor, MultiLoRAMixin):
             description="Apply watermark to generated images",
             default=False,
         ),
-        # Model selection (noobai XL 1.1 is loaded by default)
+        # Model selection (noobai XL Vpred 1.0 is loaded by default)
         use_standard_sdxl: bool = Input(
-            description="Use standard SDXL instead of noobai XL 1.1 (for realistic content)",
+            description="Use standard SDXL instead of noobai XL Vpred 1.0 (for realistic content)",
             default=False,
         ),
     ) -> List[Path]:
@@ -742,25 +742,25 @@ class Predictor(BasePredictor, MultiLoRAMixin):
         civitai_token = Secret(civitai_api_token) if civitai_api_token else None
         
         # Switch to standard SDXL if requested
-        if use_standard_sdxl and self.current_model == "noobai-xl-1.1":
+        if use_standard_sdxl and self.current_model == "noobai-XL-Vpred-1.0":
             print("Switching to standard SDXL UNet...")
             self.txt2img_pipe.unet = self.original_unet
             self.img2img_pipe.unet = self.original_unet
             self.inpaint_pipe.unet = self.original_unet
             self.current_model = "sdxl-base"
             print("✅ Using standard SDXL")
-        elif not use_standard_sdxl and self.current_model != "noobai-xl-1.1":
-            # Switch back to noobai XL 1.1 (which should already be loaded)
-            print("Using noobai XL 1.1 (default)")
-            
-        # Apply model-specific optimizations for noobai XL 1.1
+        elif not use_standard_sdxl and self.current_model != "noobai-XL-Vpred-1.0":
+            # Switch back to noobai XL Vpred 1.0 (which should already be loaded)
+            print("Using noobai XL Vpred 1.0 (default)")
+
+        # Apply model-specific optimizations for noobai XL Vpred 1.0
         if not use_standard_sdxl:
-            if guidance == 7.5:  # If using default guidance, optimize for noobai XL 1.1
+            if guidance == 7.5:  # If using default guidance, optimize for noobai XL Vpred 1.0
                 guidance = 4.5
-                print(f"Applied noobai XL 1.1 optimized guidance: {guidance}")
+                print(f"Applied noobai XL Vpred 1.0 optimized guidance: {guidance}")
             if not negative_prompt:
                 negative_prompt = "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry"
-                print("Applied noobai XL 1.1 optimized negative prompt")
+                print("Applied noobai XL Vpred 1.0 optimized negative prompt")
         
         # Handle LoRAs using smart caching with enhanced compatibility checking
         try:
@@ -776,7 +776,7 @@ class Predictor(BasePredictor, MultiLoRAMixin):
         except Exception as e:
             print(f"⚠️ LoRA loading encountered issues: {e}")
             print("💡 This may be due to LoRA/model architecture mismatch")
-            print("   Consider using LoRAs specifically trained for noobai XL 1.1 or SDXL")
+            print("   Consider using LoRAs specifically trained for noobai XL Vpred 1.0 or SDXL")
             # Continue without LoRAs rather than failing completely
         
         print(f"Prompt: {prompt}")
